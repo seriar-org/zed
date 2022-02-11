@@ -23,11 +23,11 @@ jobs:
         go version
         go get -u golang.org/x/lint/golint
     - name: Run build
-      run: go build .
+      run: go build ./...
 
     - name: Run vet and lint
       run: |
-        go vet .
-        golint .
+        go vet ./...
+        golint ./...
     - name: Testing
-      run: go test .
+      run: go test ./...
