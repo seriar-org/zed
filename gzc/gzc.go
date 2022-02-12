@@ -87,6 +87,15 @@ type Dependencies struct {
 	Dependencies []Dependency `json:"dependencies"`
 }
 
+func (e *Epic) HasIssue(repoID, issueID int) bool {
+	for _, i := range e.Issues {
+		if i.IssueNumber == issueID && i.RepoID == repoID {
+			return true
+		}
+	}
+	return false
+}
+
 func (c *Client) RequestEpic(repoID, epicID int) (*Epic, error) {
 	req, err := http.NewRequest("GET", c.createURL(fmt.Sprintf("/p1/repositories/%d/epics/%d", repoID, epicID)), nil)
 	if err != nil {

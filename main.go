@@ -40,7 +40,11 @@ func main() {
 	c := createClient(token, timeout)
 	graph := gdm.CreateMermaidGraph()
 
-	graph, err := CreateIssueNodes(repoID, epicID, c, graph)
+	graph, e, err := CreateIssueNodes(repoID, epicID, c, graph)
+	if err != nil {
+		panic(err)
+	}
+	graph, err = CreateDependencyLinks(e, c, graph)
 	if err != nil {
 		panic(err)
 	}
