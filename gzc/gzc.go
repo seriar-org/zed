@@ -2,7 +2,6 @@ package gzc
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -11,7 +10,7 @@ import (
 
 type API struct {
 	HTTPClient *http.Client
-	BaseUrl    string
+	BaseURL    string
 }
 
 type Client struct {
@@ -19,10 +18,10 @@ type Client struct {
 	API       *API
 }
 
-func CreateAPI(c *http.Client, baseUrl string) *API {
+func CreateAPI(c *http.Client, baseURL string) *API {
 	return &API{
 		HTTPClient: c,
-		BaseUrl:    baseUrl,
+		BaseURL:    baseURL,
 	}
 }
 
@@ -50,13 +49,13 @@ func (c *Client) Request(req *http.Request) (resp *http.Response, err error) {
 	}
 
 	if resp.StatusCode/100 != 2 {
-		return nil, errors.New(fmt.Sprintf("Request %v failed. Response was %v", req, resp))
+		return nil, fmt.Errorf("Request %v failed. Response was %v", req, resp)
 	}
 	return resp, nil
 }
 
-func (c *Client) createUrl(resource string) string {
-	return fmt.Sprintf("%s%s", c.API.BaseUrl, resource)
+func (c *Client) createURL(resource string) string {
+	return fmt.Sprintf("%s%s", c.API.BaseURL, resource)
 }
 
 type Estimate struct {
@@ -89,7 +88,7 @@ type Dependencies struct {
 }
 
 func (c *Client) RequestEpic(repoID, epicID int) (*Epic, error) {
-	req, err := http.NewRequest("GET", c.createUrl(fmt.Sprintf("/p1/repositories/%d/epics/%d", repoID, epicID)), nil)
+	req, err := http.NewRequest("GET", c.createURL(fmt.Sprintf("/p1/repositories/%d/epics/%d", repoID, epicID)), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -115,7 +114,7 @@ func (c *Client) RequestEpic(repoID, epicID int) (*Epic, error) {
 }
 
 func (c *Client) RequestDependencies(repoID int) (*Dependencies, error) {
-	req, err := http.NewRequest("GET", c.createUrl(fmt.Sprintf("/p1/repositories/%d/dependencies", repoID)), nil)
+	req, err := http.NewRequest("GET", c.createURL(fmt.Sprintf("/p1/repositories/%d/dependencies", repoID)), nil)
 	if err != nil {
 		return nil, err
 	}
