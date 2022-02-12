@@ -6,11 +6,12 @@ import (
 	"os"
 	"strconv"
 
+	"github.com/seriar-org/zed/gdm"
 	"github.com/seriar-org/zed/gzc"
 )
 
-func main() {
-	fmt.Println("Who's Zed?")
+func parseArgs() (string, int, int, int) {
+	token := os.Args[1]
 	repoID, err := strconv.Atoi(os.Args[2])
 	if err != nil {
 		panic("Cannot convert repository id to int")
@@ -23,18 +24,26 @@ func main() {
 	if err != nil {
 		panic("Cannot convert timeout to int")
 	}
+	return token, repoID, epicID, timeout
+}
+
+func createClient(token string, timeout int) *gzc.Client {
 	a := gzc.CreateAPI(&http.Client{}, "https://api.zenhub.com").WithTimeout(timeout)
-	c := gzc.CreateClient(a, os.Args[1])
+	c := gzc.CreateClient(a, token)
+	return c
+}
 
-	e, err := c.RequestEpic(repoID, epicID)
-	if err != nil {
-		fmt.Printf("error %+v\n", err)
-	}
-	fmt.Printf("Resp: %+v\n", e)
+func main() {
+	fmt.Println("Who's Zed?")
 
-	d, err := c.RequestDependencies(repoID)
+	token, repoID, epicID, timeout := parseArgs()
+	c := createClient(token, timeout)
+	graph := gdm.CreateMermaidGraph()
+
+	graph, err := CreateIssueNodes(repoID, epicID, c, graph)
 	if err != nil {
-		fmt.Printf("error %+v\n", err)
+		panic(err)
 	}
-	fmt.Printf("Resp: %+v\n", d)
+
+	fmt.Printf("```mermaid\n%s\n```\n", graph.Render())
 }
