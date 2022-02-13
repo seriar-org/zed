@@ -6,7 +6,6 @@ import (
 	"os"
 	"strconv"
 
-	"github.com/seriar-org/zed/gdm"
 	"github.com/seriar-org/zed/gzc"
 )
 
@@ -38,16 +37,18 @@ func main() {
 
 	token, repoID, epicID, timeout := parseArgs()
 	c := createClient(token, timeout)
-	graph := gdm.CreateMermaidGraph()
 
-	graph, e, err := CreateIssueNodes(repoID, epicID, c, graph)
-	if err != nil {
-		panic(err)
-	}
-	graph, err = CreateDependencyLinks(e, c, graph)
+	z := CreateZed(c)
+
+	_, err := z.CreateIssueNodes(repoID, epicID)
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("```mermaid\n%s\n```\n", graph.Render())
+	_, err = z.CreateDependencyLinks()
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Printf("```mermaid\n%s\n```\n", z.Render())
 }
