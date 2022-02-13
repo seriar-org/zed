@@ -27,7 +27,13 @@ func parseArgs() (*Conf, error) {
 		repoID, epicID, timeout                   int
 	)
 
-	rootCmd := &cobra.Command{Use: "zed", Run: func(c *cobra.Command, args []string) {}}
+	rootCmd := &cobra.Command{
+		Use:   "zed",
+		Short: "zed is zenhub epic dependencies visualizer",
+		Long: `zed uses github and zenhub apis to generate a dependency graph 
+	for a selected epic in a 'mermaid' md-like format.`,
+		Run: func(c *cobra.Command, args []string) {},
+	}
 	rootCmd.Flags().StringVarP(&githubToken, "github", "g", "", "GitHub token (requried)")
 	rootCmd.Flags().StringVarP(&zenhubToken, "zenhub", "z", "", "ZenHub token (required)")
 	rootCmd.Flags().IntVarP(&repoID, "repo", "r", 0, "ID of repo (alternative '--repoName' and '--owner')")
@@ -82,7 +88,6 @@ func createClient(token string, timeout int) *gzc.Client {
 }
 
 func main() {
-	fmt.Println("Who's Zed?")
 
 	conf, err := parseArgs()
 	if err != nil {
@@ -118,5 +123,5 @@ func main() {
 		panic(err)
 	}
 
-	fmt.Printf("```mermaid\n%s\n```\n", z.Render())
+	fmt.Println(z.Render())
 }
