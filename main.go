@@ -49,7 +49,7 @@ func main() {
 	tc := oauth2.NewClient(ctx, ts)
 	github := github.NewClient(tc)
 
-	z := CreateZed(zenhub, github, ctx)
+	z := CreateZed(ctx, zenhub, github)
 
 	_, err := z.CreateIssueNodes(repoID, epicID)
 	if err != nil {
