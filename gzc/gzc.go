@@ -70,7 +70,7 @@ type Issue struct {
 	IssueNumber int        `json:"issue_number"`
 	IsEpic      bool       `json:"is_epic"`
 	RepoID      int        `json:"repo_id"`
-	Estimete    Estimate   `json:"estimate"`
+	Estimate    Estimate   `json:"estimate"`
 	Pipelines   []Pipeline `json:"pipelines"`
 }
 type Epic struct {

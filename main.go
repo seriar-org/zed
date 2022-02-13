@@ -1,30 +1,33 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"strconv"
 
-	"github.com/seriar-org/zed/gdm"
+	"github.com/google/go-github/v42/github"
 	"github.com/seriar-org/zed/gzc"
+	"golang.org/x/oauth2"
 )
 
-func parseArgs() (string, int, int, int) {
-	token := os.Args[1]
-	repoID, err := strconv.Atoi(os.Args[2])
+func parseArgs() (string, string, int, int, int) {
+	zenhubToken := os.Args[1]
+	githubToken := os.Args[2]
+	repoID, err := strconv.Atoi(os.Args[3])
 	if err != nil {
 		panic("Cannot convert repository id to int")
 	}
-	epicID, err := strconv.Atoi(os.Args[3])
+	epicID, err := strconv.Atoi(os.Args[4])
 	if err != nil {
 		panic("Cannot convert epic id to int")
 	}
-	timeout, err := strconv.Atoi(os.Args[4])
+	timeout, err := strconv.Atoi(os.Args[5])
 	if err != nil {
 		panic("Cannot convert timeout to int")
 	}
-	return token, repoID, epicID, timeout
+	return zenhubToken, githubToken, repoID, epicID, timeout
 }
 
 func createClient(token string, timeout int) *gzc.Client {
@@ -36,18 +39,27 @@ func createClient(token string, timeout int) *gzc.Client {
 func main() {
 	fmt.Println("Who's Zed?")
 
-	token, repoID, epicID, timeout := parseArgs()
-	c := createClient(token, timeout)
-	graph := gdm.CreateMermaidGraph()
+	zenhubToken, githubToken, repoID, epicID, timeout := parseArgs()
+	zenhub := createClient(zenhubToken, timeout)
 
-	graph, e, err := CreateIssueNodes(repoID, epicID, c, graph)
+	ctx := context.Background()
+	ts := oauth2.StaticTokenSource(
+		&oauth2.Token{AccessToken: githubToken},
+	)
+	tc := oauth2.NewClient(ctx, ts)
+	github := github.NewClient(tc)
+
+	z := CreateZed(zenhub, github, ctx)
+
+	_, err := z.CreateIssueNodes(repoID, epicID)
 	if err != nil {
 		panic(err)
 	}
-	graph, err = CreateDependencyLinks(e, c, graph)
+
+	_, err = z.CreateDependencyLinks()
 	if err != nil {
 		panic(err)
 	}
 
-	fmt.Printf("```mermaid\n%s\n```\n", graph.Render())
+	fmt.Printf("```mermaid\n%s\n```\n", z.Render())
 }
