@@ -32,6 +32,18 @@ also contains some information about the issue.
 Note there are no limitations on usage of github or zenhub API in place in zed.
 If the epic you access has hundreds of issues - hundreds of request will be made.
 
+## Build & run
+```
+git clone git@github.com:seriar-org/zed.git
+cd zed
+go build
+./zed -z <ZENHUB_TOKEN> -g <GITHUB_TOKEN> -r <RepoID> -e <EpicID> > graph.md
+```
+You can then render results from `graph.md` in some available online tools:
+* [https://mermaid.live/](https://mermaid.live/)
+* [https://mermaid-js.github.io/mermaid-live-editor](https://mermaid-js.github.io/mermaid-live-editor)
+
+
 ## Tips
 
 ### Getting github token:
