@@ -4,30 +4,75 @@ import (
 	"context"
 	"fmt"
 	"net/http"
-	"os"
-	"strconv"
 
 	"github.com/google/go-github/v42/github"
 	"github.com/seriar-org/zed/gzc"
+	"github.com/spf13/cobra"
 	"golang.org/x/oauth2"
 )
 
-func parseArgs() (string, string, int, int, int) {
-	zenhubToken := os.Args[1]
-	githubToken := os.Args[2]
-	repoID, err := strconv.Atoi(os.Args[3])
+type Conf struct {
+	githubToken string
+	zenhubToken string
+	repoName    string
+	owner       string
+	repoID      int
+	epicID      int
+	timeout     int
+}
+
+func parseArgs() (*Conf, error) {
+	var (
+		githubToken, zenhubToken, repoName, owner string
+		repoID, epicID, timeout                   int
+	)
+
+	rootCmd := &cobra.Command{Use: "zed", Run: func(c *cobra.Command, args []string) {}}
+	rootCmd.Flags().StringVarP(&githubToken, "github", "g", "", "GitHub token (requried)")
+	rootCmd.Flags().StringVarP(&zenhubToken, "zenhub", "z", "", "ZenHub token (required)")
+	rootCmd.Flags().IntVarP(&repoID, "repo", "r", 0, "ID of repo (alternative '--repoName' and '--owner')")
+	rootCmd.Flags().StringVarP(&repoName, "repoName", "n", "", "name of repo, requires owner to be defined (aletrnative '--repo')")
+	rootCmd.Flags().StringVarP(&owner, "owner", "o", "", "owner of repo, must be provided if repo is referenced by name")
+	rootCmd.Flags().IntVarP(&epicID, "epic", "e", 0, "ID of an epic (required)")
+	rootCmd.Flags().IntVarP(&timeout, "timeout", "t", 10, "client timeout")
+	err := rootCmd.Execute()
+
 	if err != nil {
-		panic("Cannot convert repository id to int")
+		rootCmd.Help()
+		return nil, err
 	}
-	epicID, err := strconv.Atoi(os.Args[4])
-	if err != nil {
-		panic("Cannot convert epic id to int")
+	if githubToken == "" || zenhubToken == "" {
+		rootCmd.Help()
+		return nil, fmt.Errorf("Both zenhub and github tokens must be provided. Tokens available: Github - %v, Zenhub - %v", githubToken != "", zenhubToken != "")
 	}
-	timeout, err := strconv.Atoi(os.Args[5])
-	if err != nil {
-		panic("Cannot convert timeout to int")
+	if repoID > 0 && repoName != "" {
+		rootCmd.Help()
+		return nil, fmt.Errorf("Cannot define repo by id(%d) and name(%s) both (using id is preferred)", repoID, repoName)
 	}
-	return zenhubToken, githubToken, repoID, epicID, timeout
+	if owner == "" && repoName != "" {
+		rootCmd.Help()
+		return nil, fmt.Errorf("When defining repo by name(%s) owner must be specified", repoName)
+	}
+	if repoID <= 0 && repoName == "" {
+		rootCmd.Help()
+		return nil, fmt.Errorf("Repo must be defined either by positive id(was %d) or by non empty owner and name", repoID)
+	}
+	if epicID <= 0 {
+		rootCmd.Help()
+		return nil, fmt.Errorf("Epic must be defined by positive id (was %d)", epicID)
+	}
+	if timeout < 1 {
+		rootCmd.Help()
+		return nil, fmt.Errorf("Timeout(%d) must be more than 0", timeout)
+	}
+	return &Conf{
+		zenhubToken: zenhubToken,
+		githubToken: githubToken,
+		repoName:    repoName,
+		owner:       owner,
+		repoID:      repoID,
+		epicID:      epicID,
+		timeout:     timeout}, nil
 }
 
 func createClient(token string, timeout int) *gzc.Client {
@@ -39,19 +84,31 @@ func createClient(token string, timeout int) *gzc.Client {
 func main() {
 	fmt.Println("Who's Zed?")
 
-	zenhubToken, githubToken, repoID, epicID, timeout := parseArgs()
-	zenhub := createClient(zenhubToken, timeout)
+	conf, err := parseArgs()
+	if err != nil {
+		panic(err)
+	}
+
+	zenhub := createClient(conf.zenhubToken, conf.timeout)
 
 	ctx := context.Background()
 	ts := oauth2.StaticTokenSource(
-		&oauth2.Token{AccessToken: githubToken},
+		&oauth2.Token{AccessToken: conf.githubToken},
 	)
 	tc := oauth2.NewClient(ctx, ts)
 	github := github.NewClient(tc)
 
 	z := CreateZed(ctx, zenhub, github)
 
-	_, err := z.CreateIssueNodes(repoID, epicID)
+	if conf.repoID <= 0 {
+		r, _, err := github.Repositories.Get(ctx, conf.owner, conf.repoName)
+		if err != nil {
+			panic(err)
+		}
+		conf.repoID = int(*r.ID)
+	}
+
+	_, err = z.CreateIssueNodes(conf.repoID, conf.epicID)
 	if err != nil {
 		panic(err)
 	}
