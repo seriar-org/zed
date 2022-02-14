@@ -59,7 +59,7 @@ func (c *Client) createURL(resource string) string {
 }
 
 type Estimate struct {
-	Value int `json:"value"`
+	Value float64 `json:"value"`
 }
 type Pipeline struct {
 	WorkspaceID string `json:"workspace_id"`
