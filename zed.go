@@ -60,7 +60,7 @@ type Zed struct {
 	ZenHubClient      *gzc.Client
 	GitHubClient      *github.Client
 	Context           context.Context
-	Epic              *gzc.Epic
+	issuesByRepo      map[int][]int
 }
 
 func CreateZed(context context.Context, zenhubClient *gzc.Client, githubClient *github.Client) *Zed {
@@ -74,6 +74,7 @@ func CreateZed(context context.Context, zenhubClient *gzc.Client, githubClient *
 		ZenHubClient: zenhubClient,
 		GitHubClient: githubClient,
 		Context:      context,
+		issuesByRepo: make(map[int][]int, 0),
 	}
 }
 
@@ -122,9 +123,9 @@ func (z *Zed) CreateIssueNodes(repoID, epicID int) (*Zed, error) {
 	if err != nil {
 		return nil, err
 	}
-	z.Epic = e
 
 	for _, issue := range e.Issues {
+		z.issuesByRepo[issue.RepoID] = append(z.issuesByRepo[issue.RepoID], issue.IssueNumber)
 		n, err := z.createNode(issue.RepoID, issue.IssueNumber)
 		if err != nil {
 			return nil, err
@@ -132,6 +133,12 @@ func (z *Zed) CreateIssueNodes(repoID, epicID int) (*Zed, error) {
 		n.StoryPoints = issue.Estimate.Value
 		nodeID := createIssueID(issue)
 		z.DependenciesGraph.Nodes[nodeID] = *n
+		if issue.IsEpic {
+			z, err = z.CreateIssueNodes(issue.RepoID, issue.IssueNumber)
+			if err != nil {
+				return nil, err
+			}
+		}
 	}
 
 	return z, nil
@@ -139,14 +146,8 @@ func (z *Zed) CreateIssueNodes(repoID, epicID int) (*Zed, error) {
 }
 
 func (z *Zed) CreateDependencyLinks() (*Zed, error) {
-	// creating epic repo-issues multimap
-	issuesByRepo := make(map[int][]int)
-	for _, issue := range z.Epic.Issues {
-		issuesByRepo[issue.RepoID] = append(issuesByRepo[issue.RepoID], issue.IssueNumber)
-	}
-
 	// for each repo in epic getting all dependencies
-	for repoID := range issuesByRepo {
+	for repoID := range z.issuesByRepo {
 		dependencies, err := z.ZenHubClient.RequestDependencies(repoID)
 		if err != nil {
 			return nil, err
