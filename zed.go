@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 
 	"github.com/google/go-github/v42/github"
 	"github.com/seriar-org/zed/gdm"
@@ -31,6 +32,10 @@ type Node struct {
 	IsExternal  bool
 }
 
+func replaceDoubleQuotes(i string) string {
+	return strings.ReplaceAll(i, "\"", "#quot;")
+}
+
 func (n *Node) MermaidNodeText() string {
 	sp := "?"
 	if n.StoryPoints > 0 {
@@ -40,7 +45,7 @@ func (n *Node) MermaidNodeText() string {
 	if n.IsExternal {
 		text = fmt.Sprintf("<i>%s<br/>EXTERNAL</i>", text)
 	}
-	return text
+	return fmt.Sprintf("\"%s\"", replaceDoubleQuotes(text))
 }
 
 type Edge struct {
