@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"strconv"
 
 	"github.com/google/go-github/v42/github"
 	"github.com/seriar-org/zed/gdm"
@@ -24,7 +23,7 @@ type Node struct {
 	Repo        string
 	Owner       string
 	IssueID     int
-	StoryPoints int
+	StoryPoints float64
 	State       string
 	Title       string
 	Assignee    string
@@ -35,7 +34,7 @@ type Node struct {
 func (n *Node) MermaidNodeText() string {
 	sp := "?"
 	if n.StoryPoints > 0 {
-		sp = strconv.Itoa(n.StoryPoints)
+		sp = fmt.Sprintf("%.1f", n.StoryPoints)
 	}
 	text := fmt.Sprintf("%s/%s#%d<br/>%s<br/>%s SP<br/>%s<br/>%s", n.Owner, n.Repo, n.IssueID, n.Title, sp, n.Assignee, n.State)
 	if n.IsExternal {
