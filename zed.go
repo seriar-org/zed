@@ -41,7 +41,7 @@ func (n *Node) MermaidNodeText() string {
 	if n.StoryPoints > 0 {
 		sp = fmt.Sprintf("%.1f", n.StoryPoints)
 	}
-	text := fmt.Sprintf("%s/%s#%d<br/>%s<br/>%s SP<br/>%s<br/>%s", n.Owner, n.Repo, n.IssueID, n.Title, sp, n.Assignee, n.State)
+	text := fmt.Sprintf("%s/%s#%d<br/>%.40s<br/>%s SP<br/>%s<br/>%s", n.Owner, n.Repo, n.IssueID, n.Title, sp, n.Assignee, n.State)
 	if n.IsExternal {
 		text = fmt.Sprintf("<i>%s<br/>EXTERNAL</i>", text)
 	}
